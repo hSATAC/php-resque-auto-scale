@@ -34,4 +34,4 @@ This is a project trying to build an auto scale architecture of PHP-Resque.
 
 For now it's all experimental design.
 
-All numbers and codes were not tested in production enviroments nor runned benchmarks.
+All numbers and codes are not from production enviroments nor runned benchmarks.
