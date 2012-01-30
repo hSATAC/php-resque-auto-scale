@@ -1,9 +1,10 @@
 <?php
 if(empty($argv[1])) {
-	die('Specify the name of a job to add. e.g, php queue.php PHP_Job');
+  $argv[1] = 'PHP_Job';
 }
 
 require 'php-resque/lib/Resque.php';
+require 'plugin.php';
 date_default_timezone_set('GMT');
 Resque::setBackend('127.0.0.1:6379');
 
