@@ -30,8 +30,29 @@ This is a project trying to build an auto scale architecture of PHP-Resque.
 
 * 60+ jobs => 5 workers
 
+## Usage
+
+* You need to add the queue type as a member static variable to your Job class. Like this:
+
+```php
+<?php
+class PHP_Job
+{
+    static public $queue = "default";
+}
+?>
+```
+
+* Require ```plugin.php``` both in your resque init script and enqueue part.
+
+* Change the setting and code in ```plugin.php``` based on your need.
+
+* Start only one worker via your resque init script.
+
+* Now it's auto-scalable.
+
 ## Disclaimer
 
 For now it's all experimental design.
 
-All numbers and codes are not from production enviroments nor runned benchmarks.
+All numbers and codes are not from production enviroments nor runned benchmarks. It's just a prototype for now.
