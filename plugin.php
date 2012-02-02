@@ -7,47 +7,42 @@ Resque_Event::listen('beforeFork', array('Resque_Scaler', 'beforeFork'));
 class Resque_Scaler
 {
     // define how many jobs require how many workers.
-    /*public static $SCALE_SETTING = array(
+    public static $SCALE_SETTING = array(
         15 => 2,
         25 => 3,
         40 => 4,
         60 => 5
-    );*/
-    public static $SCALE_SETTING = array(
-        2 => 2,
-        3 => 3,
-        4 => 4,
-        5 => 5
     );
 
 	public static function afterEnqueue($class, $arguments)
 	{
-		echo "Job was queued for " . $class . ".\n";
+		fwrite(STDOUT, "Job was queued for " . $class . ".\n");
         $class_vars = get_class_vars($class);
 
         if(self::check_need_worker($class_vars["queue"])) {
-            echo "we need more workers\n";
+
+            fwrite(STDOUT, "we need more workers\n");
             self::add_worker();
         } else {
-            echo "workers is enough.\n";
+            fwrite(STDOUT, "workers is enough.\n");
         }
 
 	}
 
 	public static function beforeFork($job)
 	{
-        echo "Just about to performe " . $job . "\n";
+        fwrite(STDOUT, "Just about to performe " . $job . "\n");
         if(self::check_kill_worker($job->queue)) {
-            echo "too many workers...kill this one.\n";
+            fwrite(STDOUT, "too many workers...kill this one.\n");
 
-            // NOTE: tried to kill with $worker->shuddown but it's not working. use kill to send SIGQUIT instead.
+            // NOTE: tried to kill with $worker->shutdown but it's not working. use kill to send SIGQUIT instead.
             $server_workers = self::server_workers(self::get_all_workers());
             $current_workers = $server_workers[self::get_hostname()];
             `kill -3 {$current_workers[0]["pid"]}`;
             //$worker = $job->worker;
             //$worker->shutdown();
         } else {
-            echo "we still need this worker.\n";
+            fwrite(STDOUT, "we still need this worker.\n");
         }
     }
 
@@ -155,7 +150,7 @@ class Resque_Scaler
                 // if there are more than 1 types of workers on this machine, we don't know which kind to create. just create the first one.
                 $worker = new Resque_Worker($current_workers[0]['queues']);
                 // TODO: set logLevel
-                $worker->logLevel = 2;
+                //$worker->logLevel = 2;
                 fwrite(STDOUT, '*** Starting worker '.$worker."\n");
                 // TODO: set interval
                 $worker->work();
