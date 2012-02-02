@@ -2,8 +2,7 @@
 require_once 'php-resque/lib/Resque.php';
 require_once 'php-resque/lib/Resque/Worker.php';
 Resque_Event::listen('afterEnqueue', array('Resque_Scaler', 'afterEnqueue'));
-Resque_Event::listen('afterPerform', array('Resque_Scaler', 'afterPerform'));
-#Resque_Event::listen('beforeFork', array('Resque_Scaler', 'afterPerform'));
+Resque_Event::listen('beforeFork', array('Resque_Scaler', 'beforeFork'));
 
 class Resque_Scaler
 {
@@ -35,9 +34,9 @@ class Resque_Scaler
 
 	}
 
-	public static function afterPerform($job)
+	public static function beforeFork($job)
 	{
-        echo "Just performed " . $job . "\n";
+        echo "Just about to performe " . $job . "\n";
         if(self::check_kill_worker($job->queue)) {
             echo "too many workers...kill this one.\n";
 
