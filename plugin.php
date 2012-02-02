@@ -3,6 +3,7 @@ require_once 'php-resque/lib/Resque.php';
 require_once 'php-resque/lib/Resque/Worker.php';
 Resque_Event::listen('afterEnqueue', array('Resque_Scaler', 'afterEnqueue'));
 Resque_Event::listen('afterPerform', array('Resque_Scaler', 'afterPerform'));
+#Resque_Event::listen('beforeFork', array('Resque_Scaler', 'afterPerform'));
 
 class Resque_Scaler
 {
@@ -24,9 +25,6 @@ class Resque_Scaler
 	{
 		echo "Job was queued for " . $class . ".\n";
         $class_vars = get_class_vars($class);
-        //$job_count = Resque::size($class_vars["queue"]);
-
-        //echo $job_count ." jobs is pending in queue ". $class_vars["queue"] . "\n";
 
         if(self::check_need_worker($class_vars["queue"])) {
             echo "we need more workers\n";
@@ -39,7 +37,19 @@ class Resque_Scaler
 
 	public static function afterPerform($job)
 	{
-		echo "Just performed " . $job . "\n";
+        echo "Just performed " . $job . "\n";
+        if(self::check_kill_worker($job->queue)) {
+            echo "too many workers...kill this one.\n";
+
+            // NOTE: tried to kill with $worker->shuddown but it's not working. use kill instead.
+            $server_workers = self::server_workers(self::get_all_workers());
+            $current_workers = $server_workers[self::get_hostname()];
+            `kill {$current_workers[0]["pid"]}`;
+            //$worker = $job->worker;
+            //$worker->shutdown();
+        } else {
+            echo "we still need this worker.\n";
+        }
     }
 
     // -----------------
@@ -47,11 +57,10 @@ class Resque_Scaler
     {
         $need_worker = 1;
         $pending_job_count = Resque::size($queue);
-        echo "pending:{$pending_job_count}\n";
+
         // check if we need more workers
         foreach(self::$SCALE_SETTING as $job_count => $worker_count) {
             if($pending_job_count > $job_count) {
-                echo $pending_job_count." > " . $job_count . "\n";
                 $need_worker = $worker_count;
             }
         }
@@ -59,12 +68,19 @@ class Resque_Scaler
         return $need_worker;
     }
 
+    public static function check_kill_worker($queue)
+    {
+        $need_worker = self::cal_need_worker($queue);
+        $current_worker = sizeof(self::get_all_workers($queue));
+
+        return ($current_worker > $need_worker) ? TRUE : FALSE;
+    }
+
     public static function check_need_worker($queue)
     {
         $need_worker = self::cal_need_worker($queue);
         $current_worker = sizeof(self::get_all_workers($queue));
 
-        echo "need:".$need_worker."|current:".$current_worker."\n";
         return ($need_worker > $current_worker) ? TRUE : FALSE;
     }
 	
@@ -87,6 +103,7 @@ class Resque_Scaler
             $worker['hostname'] = $worker_data[0];
             $worker['queues'] = explode(',', $worker_data[2]);
             $worker['pid'] = $worker_data[1];
+            $worker['workerId'] = $workerId;
 
             if(($queue && (in_array($queue, $worker['queues']) || in_array("*", $worker['queues']))) || !$queue) 
             {
@@ -139,6 +156,7 @@ class Resque_Scaler
                 // if there are more than 1 types of workers on this machine, we don't know which kind to create. just create the first one.
                 $worker = new Resque_Worker($current_workers[0]['queues']);
                 // TODO: set logLevel
+                $worker->logLevel = 2;
                 fwrite(STDOUT, '*** Starting worker '.$worker."\n");
                 // TODO: set interval
                 $worker->work();
