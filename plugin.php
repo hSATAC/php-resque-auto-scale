@@ -40,10 +40,10 @@ class Resque_Scaler
         if(self::check_kill_worker($job->queue)) {
             echo "too many workers...kill this one.\n";
 
-            // NOTE: tried to kill with $worker->shuddown but it's not working. use kill instead.
+            // NOTE: tried to kill with $worker->shuddown but it's not working. use kill to send SIGQUIT instead.
             $server_workers = self::server_workers(self::get_all_workers());
             $current_workers = $server_workers[self::get_hostname()];
-            `kill {$current_workers[0]["pid"]}`;
+            `kill -3 {$current_workers[0]["pid"]}`;
             //$worker = $job->worker;
             //$worker->shutdown();
         } else {

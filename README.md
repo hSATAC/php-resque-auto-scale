@@ -6,7 +6,7 @@ This is a project trying to build an auto scale architecture of PHP-Resque.
 
 ### Expected Behavior
 
-* Trigger ```AFTERENQUEUE``` to check the total job number of this queue.
+* Trigger ```afterEnqueue``` to check the total job number of this queue.
 
 * If the number larger than ```15``` than check the total number of workers involved in this queue.
 
@@ -16,7 +16,7 @@ This is a project trying to build an auto scale architecture of PHP-Resque.
   
   * In the mean time, try to create workers that deal the same queues on each server.
 
-* Trigger ```AFTERPERFORM``` to check the total job number and worker number, close the useless ones.
+* Trigger ```beforeFork``` to check the total job number and worker number, close the useless ones.
 
 ### Number of Jobs and Workers
 
